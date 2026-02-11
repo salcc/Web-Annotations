@@ -17,10 +17,12 @@
   const STAR_BUTTON_ID = "star-btn";
   const HIGHLIGHT_CLASS = "web-highlight";
   const HIGHLIGHT_FOCUS_CLASS = "web-highlight-focus";
+  const HIGHLIGHT_BACKGROUND_ALPHA = 0.5;
   const URL_CHECK_DELAY_MS = 120;
   const HIGHLIGHT_FOCUS_MS = 1200;
   const CONTEXT_CHARS = 40;
   const COLORS = ["yellow", "greenyellow", "cyan", "magenta", "red"];
+  const COLOR_PARSE_CONTEXT = document.createElement("canvas").getContext("2d");
   const EXCLUDED_SELECTOR = [
     `#${TOOLBAR_ID}`,
     `#${ANNOTATION_LIST_PANEL_ID}`,
@@ -857,7 +859,10 @@
       const highlightSpan = document.createElement("span");
       highlightSpan.className = HIGHLIGHT_CLASS;
       highlightSpan.dataset.annotationId = annotation.id;
-      highlightSpan.style.backgroundColor = annotation.color || currentColor;
+      highlightSpan.style.backgroundColor = toTransparentHighlightColor(
+        annotation.color || currentColor,
+        HIGHLIGHT_BACKGROUND_ALPHA
+      );
 
       selected.parentNode.replaceChild(highlightSpan, selected);
       highlightSpan.appendChild(selected);
@@ -1143,6 +1148,76 @@
 
   function normalizeWhitespace(value) {
     return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function toTransparentHighlightColor(color, alpha) {
+    const clampedAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 0.5;
+    const rgb = parseCssColorToRgb(color);
+    if (!rgb) {
+      return color;
+    }
+
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${clampedAlpha})`;
+  }
+
+  function parseCssColorToRgb(color) {
+    if (typeof color !== "string" || !color.trim()) {
+      return null;
+    }
+
+    if (!COLOR_PARSE_CONTEXT) {
+      return null;
+    }
+
+    COLOR_PARSE_CONTEXT.fillStyle = "#000000";
+    COLOR_PARSE_CONTEXT.fillStyle = color.trim();
+    const normalized = COLOR_PARSE_CONTEXT.fillStyle;
+
+    if (/^#[0-9a-f]{6}$/i.test(normalized)) {
+      const value = normalized.slice(1);
+      return {
+        r: Number.parseInt(value.slice(0, 2), 16),
+        g: Number.parseInt(value.slice(2, 4), 16),
+        b: Number.parseInt(value.slice(4, 6), 16)
+      };
+    }
+
+    if (/^#[0-9a-f]{3}$/i.test(normalized)) {
+      const value = normalized.slice(1);
+      return {
+        r: Number.parseInt(value[0] + value[0], 16),
+        g: Number.parseInt(value[1] + value[1], 16),
+        b: Number.parseInt(value[2] + value[2], 16)
+      };
+    }
+
+    const rgbMatch = normalized.match(/^rgba?\(([^)]+)\)$/i);
+    if (!rgbMatch) {
+      return null;
+    }
+
+    const parts = rgbMatch[1].split(",").map((part) => part.trim());
+    if (parts.length < 3) {
+      return null;
+    }
+
+    const r = Number.parseFloat(parts[0]);
+    const g = Number.parseFloat(parts[1]);
+    const b = Number.parseFloat(parts[2]);
+
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
+      return null;
+    }
+
+    return {
+      r: clampChannel(r),
+      g: clampChannel(g),
+      b: clampChannel(b)
+    };
+  }
+
+  function clampChannel(value) {
+    return Math.max(0, Math.min(255, Math.round(value)));
   }
 
   function getUrlKey(url = location.href) {
