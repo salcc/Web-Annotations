@@ -8,6 +8,7 @@
   const MESSAGE_OPEN_REPO = "WA_OPEN_REPO";
   const TOOLBAR_ID = "annotation-toolbar";
   const ANNOTATION_LIST_PANEL_ID = "annotation-list-panel";
+  const ANNOTATION_COMMENT_TOOLTIP_ID = "annotation-comment-tooltip";
   const FONT_STYLE_ID = "wa-material-icons-font-style";
   const HIGHLIGHT_BUTTON_ID = "highlight-btn";
   const ERASE_BUTTON_ID = "erase-btn";
@@ -26,6 +27,7 @@
   const EXCLUDED_SELECTOR = [
     `#${TOOLBAR_ID}`,
     `#${ANNOTATION_LIST_PANEL_ID}`,
+    `#${ANNOTATION_COMMENT_TOOLTIP_ID}`,
     "script",
     "style",
     "noscript",
@@ -52,8 +54,11 @@
   let starButton = null;
   let colorPopup = null;
   let annotationListPanel = null;
+  let annotationCommentTooltip = null;
   let annotationListVisible = false;
   let focusHighlightTimeoutId = null;
+  let activeCommentEditorId = null;
+  const commentDraftsById = new Map();
 
   initialize().catch((error) => {
     console.error("Web annotations failed to initialize:", error);
@@ -160,6 +165,11 @@
     });
     document.documentElement.appendChild(annotationListPanel);
 
+    annotationCommentTooltip = document.createElement("div");
+    annotationCommentTooltip.id = ANNOTATION_COMMENT_TOOLTIP_ID;
+    annotationCommentTooltip.style.display = "none";
+    document.documentElement.appendChild(annotationCommentTooltip);
+
     renderAnnotationListPanel();
 
     updateColorState();
@@ -248,6 +258,8 @@
 
       clearAllHighlightsFromDom();
       annotations = [];
+      activeCommentEditorId = null;
+      commentDraftsById.clear();
       await persistAnnotationsForCurrentUrl();
       renderAnnotationListPanel();
     });
@@ -272,6 +284,9 @@
     document.addEventListener("mouseup", handleSelectionMouseUp);
     document.addEventListener("click", handleEraseClick);
     document.addEventListener("keydown", handleEscapeKey);
+    document.addEventListener("mousemove", handleCommentTooltipMouseMove, true);
+    window.addEventListener("scroll", hideCommentTooltip, true);
+    window.addEventListener("blur", hideCommentTooltip);
   }
 
   function bindRuntimeEvents() {
@@ -321,6 +336,7 @@
     setAnnotationListVisibility(false);
     setMode("idle");
     clearSelection();
+    hideCommentTooltip();
   }
 
   function setMode(nextMode) {
@@ -351,6 +367,75 @@
     }
 
     highlightButton.style.textShadow = `0 0 10px ${currentColor}`;
+  }
+
+  function handleCommentTooltipMouseMove(event) {
+    if (!annotationCommentTooltip) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      hideCommentTooltip();
+      return;
+    }
+
+    const highlight = target.closest(`.${HIGHLIGHT_CLASS}[data-comment]`);
+    if (!highlight) {
+      hideCommentTooltip();
+      return;
+    }
+
+    const comment = (highlight.dataset.comment || "").trim();
+    if (!comment) {
+      hideCommentTooltip();
+      return;
+    }
+
+    annotationCommentTooltip.textContent = comment;
+    annotationCommentTooltip.style.display = "block";
+    positionCommentTooltip(event.clientX, event.clientY);
+  }
+
+  function positionCommentTooltip(clientX, clientY) {
+    if (!annotationCommentTooltip) {
+      return;
+    }
+
+    const margin = 10;
+    const offsetX = 14;
+    const offsetY = 18;
+
+    const tooltipWidth = annotationCommentTooltip.offsetWidth;
+    const tooltipHeight = annotationCommentTooltip.offsetHeight;
+
+    let left = clientX + offsetX;
+    let top = clientY + offsetY;
+
+    if (left + tooltipWidth > window.innerWidth - margin) {
+      left = window.innerWidth - tooltipWidth - margin;
+    }
+    if (top + tooltipHeight > window.innerHeight - margin) {
+      top = clientY - tooltipHeight - 12;
+    }
+
+    if (left < margin) {
+      left = margin;
+    }
+    if (top < margin) {
+      top = margin;
+    }
+
+    annotationCommentTooltip.style.left = `${Math.round(left)}px`;
+    annotationCommentTooltip.style.top = `${Math.round(top)}px`;
+  }
+
+  function hideCommentTooltip() {
+    if (!annotationCommentTooltip) {
+      return;
+    }
+
+    annotationCommentTooltip.style.display = "none";
   }
 
   function setAnnotationListVisibility(visible) {
@@ -436,7 +521,6 @@
       button.type = "button";
       button.className = "annotation-list-item";
       button.dataset.annotationId = annotation.id;
-      button.title = "Jump to highlight";
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         focusAnnotationInPage(annotation.id);
@@ -460,6 +544,79 @@
       textWrap.append(text, meta);
       button.append(swatch, textWrap);
       item.appendChild(button);
+
+      const actions = document.createElement("div");
+      actions.className = "annotation-list-actions";
+
+      const commentButton = document.createElement("button");
+      commentButton.type = "button";
+      commentButton.className = "annotation-list-comment-btn";
+      commentButton.textContent = getAnnotationComment(annotation).trim() ? "Edit comment" : "Add comment";
+      commentButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        startCommentEdit(annotation.id);
+      });
+
+      actions.appendChild(commentButton);
+      item.appendChild(actions);
+
+      const comment = getAnnotationComment(annotation).trim();
+      if (comment && activeCommentEditorId !== annotation.id) {
+        const commentText = document.createElement("p");
+        commentText.className = "annotation-list-comment";
+        commentText.textContent = comment;
+        item.appendChild(commentText);
+      }
+
+      if (activeCommentEditorId === annotation.id) {
+        const editor = document.createElement("div");
+        editor.className = "annotation-list-editor";
+
+        const input = document.createElement("textarea");
+        input.className = "annotation-list-editor-input";
+        input.rows = 3;
+        input.placeholder = "Write a comment for this highlight";
+        input.value = getCommentDraft(annotation.id, getAnnotationComment(annotation));
+        input.addEventListener("input", () => {
+          commentDraftsById.set(annotation.id, input.value);
+        });
+        input.addEventListener("keydown", (event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+            event.preventDefault();
+            commitCommentEdit(annotation.id).catch((error) => {
+              console.error("Failed to save comment:", error);
+            });
+          }
+        });
+
+        const editorActions = document.createElement("div");
+        editorActions.className = "annotation-list-editor-actions";
+
+        const saveButton = document.createElement("button");
+        saveButton.type = "button";
+        saveButton.className = "annotation-list-editor-btn";
+        saveButton.textContent = "Save";
+        saveButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          commitCommentEdit(annotation.id).catch((error) => {
+            console.error("Failed to save comment:", error);
+          });
+        });
+
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.className = "annotation-list-editor-btn annotation-list-editor-btn-secondary";
+        cancelButton.textContent = "Cancel";
+        cancelButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          cancelCommentEdit(annotation.id);
+        });
+
+        editorActions.append(saveButton, cancelButton);
+        editor.append(input, editorActions);
+        item.appendChild(editor);
+      }
+
       list.appendChild(item);
     }
 
@@ -524,6 +681,58 @@
     }
 
     return new Date(timestamp).toLocaleString();
+  }
+
+  function getAnnotationComment(annotation) {
+    return typeof annotation.comment === "string" ? annotation.comment : "";
+  }
+
+  function getCommentDraft(annotationId, fallbackValue) {
+    if (commentDraftsById.has(annotationId)) {
+      return commentDraftsById.get(annotationId);
+    }
+
+    const value = typeof fallbackValue === "string" ? fallbackValue : "";
+    commentDraftsById.set(annotationId, value);
+    return value;
+  }
+
+  function startCommentEdit(annotationId) {
+    activeCommentEditorId = annotationId;
+    const annotation = annotations.find((candidate) => candidate.id === annotationId);
+    if (annotation) {
+      getCommentDraft(annotationId, getAnnotationComment(annotation));
+    }
+    renderAnnotationListPanel();
+  }
+
+  function cancelCommentEdit(annotationId) {
+    if (activeCommentEditorId === annotationId) {
+      activeCommentEditorId = null;
+    }
+    commentDraftsById.delete(annotationId);
+    renderAnnotationListPanel();
+  }
+
+  async function commitCommentEdit(annotationId) {
+    const index = annotations.findIndex((annotation) => annotation.id === annotationId);
+    if (index === -1) {
+      return;
+    }
+
+    const draft = commentDraftsById.get(annotationId);
+    const updatedComment = typeof draft === "string" ? draft.trim() : "";
+
+    annotations[index] = {
+      ...annotations[index],
+      comment: updatedComment
+    };
+
+    await persistAnnotationsForCurrentUrl();
+    updateHighlightCommentsInDom(annotationId, updatedComment);
+    activeCommentEditorId = null;
+    commentDraftsById.delete(annotationId);
+    renderAnnotationListPanel();
   }
 
   async function handleSelectionMouseUp(event) {
@@ -601,6 +810,10 @@
 
     removeHighlightById(annotationId);
     annotations = annotations.filter((annotation) => annotation.id !== annotationId);
+    if (activeCommentEditorId === annotationId) {
+      activeCommentEditorId = null;
+    }
+    commentDraftsById.delete(annotationId);
     await persistAnnotationsForCurrentUrl();
     renderAnnotationListPanel();
   }
@@ -636,6 +849,7 @@
       id: createAnnotationId(),
       color: currentColor,
       text: selectedText,
+      comment: "",
       position: hasValidPosition ? { start, end } : null,
       quote: {
         prefix: hasValidPosition ? fullText.slice(prefixStart, safeStart) : "",
@@ -863,6 +1077,7 @@
         annotation.color || currentColor,
         HIGHLIGHT_BACKGROUND_ALPHA
       );
+      applyCommentToHighlightSpan(highlightSpan, getAnnotationComment(annotation));
 
       selected.parentNode.replaceChild(highlightSpan, selected);
       highlightSpan.appendChild(selected);
@@ -873,7 +1088,31 @@
     }
   }
 
+  function applyCommentToHighlightSpan(highlightSpan, comment) {
+    if (!(highlightSpan instanceof HTMLElement)) {
+      return;
+    }
+
+    const cleanComment = typeof comment === "string" ? comment.trim() : "";
+    if (cleanComment) {
+      highlightSpan.dataset.comment = cleanComment;
+      return;
+    }
+
+    delete highlightSpan.dataset.comment;
+  }
+
+  function updateHighlightCommentsInDom(annotationId, comment) {
+    const spans = Array.from(
+      document.querySelectorAll(`.${HIGHLIGHT_CLASS}[data-annotation-id="${annotationId}"]`)
+    );
+    for (const span of spans) {
+      applyCommentToHighlightSpan(span, comment);
+    }
+  }
+
   function clearAllHighlightsFromDom() {
+    hideCommentTooltip();
     const spans = Array.from(document.querySelectorAll(`.${HIGHLIGHT_CLASS}`));
     for (const span of spans) {
       unwrapHighlightSpan(span);
@@ -881,6 +1120,7 @@
   }
 
   function removeHighlightById(annotationId) {
+    hideCommentTooltip();
     const spans = Array.from(document.querySelectorAll(`.${HIGHLIGHT_CLASS}`))
       .filter((span) => span.dataset.annotationId === annotationId);
 
@@ -1033,6 +1273,8 @@
 
       currentUrlKey = nextUrlKey;
       annotations = [];
+      activeCommentEditorId = null;
+      commentDraftsById.clear();
       await loadAnnotationsForCurrentUrl();
       applyStoredAnnotationsToPage();
       renderAnnotationListPanel();
@@ -1051,6 +1293,7 @@
         id: annotation.id,
         color: annotation.color || COLORS[0],
         text: annotation.text,
+        comment: typeof annotation.comment === "string" ? annotation.comment : "",
         position: annotation.position
           ? {
               start: annotation.position.start,

@@ -132,8 +132,27 @@
   background: rgba(39, 42, 48, 0.97);
   color: #f7f9ff;
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
-  z-index: 2147483647;
+  z-index: 2147483646;
   overflow: hidden;
+}
+
+#annotation-comment-tooltip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  max-width: min(360px, calc(100vw - 20px));
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(19, 23, 31, 0.96);
+  color: #f4f7ff;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 2147483647;
 }
 
 .annotation-list-header {
@@ -175,6 +194,13 @@
 
 .annotation-list-row {
   margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.annotation-list-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .annotation-list-item {
@@ -193,6 +219,26 @@
 
 .annotation-list-item:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.annotation-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px 4px;
+}
+
+.annotation-list-comment-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef3ff;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.annotation-list-comment-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .annotation-list-swatch {
@@ -221,6 +267,71 @@
 .annotation-list-meta {
   font-size: 11px;
   color: rgba(231, 236, 252, 0.72);
+}
+
+.annotation-list-comment {
+  margin: 0 8px 6px 30px;
+  width: calc(100% - 38px);
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-left: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(246, 250, 255, 0.95);
+  white-space: pre-wrap;
+}
+
+.annotation-list-editor {
+  margin: 0 8px 8px 30px;
+  width: calc(100% - 38px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.annotation-list-editor-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f7ff;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.annotation-list-editor-input::placeholder {
+  color: rgba(229, 234, 248, 0.6);
+}
+
+.annotation-list-editor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.annotation-list-editor-btn {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.14);
+  color: #f4f8ff;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.annotation-list-editor-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.annotation-list-editor-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .annotation-list-empty {

@@ -281,6 +281,7 @@
       id,
       color,
       text: candidate.text,
+      comment: typeof candidate.comment === "string" ? candidate.comment : "",
       position,
       quote,
       createdAt: typeof candidate.createdAt === "string" ? candidate.createdAt : null

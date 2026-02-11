@@ -6,6 +6,7 @@ Highlights are tied to each page URL, so they persist across reloads and browser
 
 ## Features
 - Highlight selected text with multiple colors.
+- Add a text comment to each saved highlight from the annotation list panel.
 - Remove a single highlight with the Erase tool.
 - Remove all highlights on the current page with Erase all.
 - Show/hide the annotation toolbar from the browser action button.
@@ -39,7 +40,9 @@ That said, support on those browsers has not been fully validated yet.
 5. Use **Erase** and click an existing highlight to remove it.
 6. Use **Erase all** to clear annotations for the current URL.
 7. Use **Annotations** to open the in-page annotation list panel.
-8. Use **Settings** to open export/import tools.
+8. In the annotation list, use **Add comment** / **Edit comment** and type directly in the inline text box.
+9. Hover a highlight to see its saved comment.
+10. Use **Settings** to open export/import tools.
 
 Hiding the toolbar does not remove saved highlights.
 
@@ -62,6 +65,7 @@ Storage value:
   - `id`
   - `color`
   - `text`
+  - `comment`
   - `position.start`
   - `position.end`
   - `quote.prefix`
