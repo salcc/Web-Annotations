@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web Annotations Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <h1>Web Annotations</h1>
+        <p>Export and import saved highlights from browser local storage.</p>
+      </header>
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2>Stored Data</h2>
+          <button id="refresh-btn" type="button">Refresh</button>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-label">URLs</span>
+            <span id="stat-urls" class="stat-value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Annotations</span>
+            <span id="stat-annotations" class="stat-value">0</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>URL</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="url-rows">
+              <tr>
+                <td colspan="2" class="empty-row">No annotation data yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Export</h2>
+        <p class="hint">Downloads all URL-keyed annotations as a JSON file.</p>
+        <button id="export-btn" type="button">Export JSON</button>
+      </section>
+
+      <section class="card">
+        <h2>Import</h2>
+        <p class="hint">
+          Import a prior export file or paste JSON directly.
+        </p>
+        <label class="field">
+          <span>JSON file</span>
+          <input id="import-file" type="file" accept=".json,application/json" />
+        </label>
+        <label class="field">
+          <span>Or paste JSON</span>
+          <textarea
+            id="import-json"
+            rows="8"
+            placeholder='{"format":"web-annotations-export","annotationsByUrl":{...}}'
+          ></textarea>
+        </label>
+        <label class="field">
+          <span>Import mode</span>
+          <select id="import-mode">
+            <option value="merge">Merge with existing</option>
+            <option value="replace">Replace existing annotation data</option>
+          </select>
+        </label>
+        <button id="import-btn" type="button">Import JSON</button>
+      </section>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

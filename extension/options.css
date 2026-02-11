@@ -1,0 +1,176 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: #f3f4f7;
+  color: #1d222c;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 18px 36px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.header p {
+  margin: 8px 0 22px;
+  color: #4a5160;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #dbe0ea;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 20px rgba(15, 22, 35, 0.05);
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 19px;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hint {
+  margin: 0 0 12px;
+  color: #576077;
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  min-width: 140px;
+  background: #f6f8fc;
+  border: 1px solid #dde4f2;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.stat-label {
+  display: block;
+  color: #5a657f;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px 10px;
+  border-top: 1px solid #e4e9f4;
+  vertical-align: top;
+}
+
+th {
+  font-size: 12px;
+  color: #5f6881;
+  border-top: none;
+}
+
+td:last-child,
+th:last-child {
+  width: 90px;
+  text-align: right;
+}
+
+.empty-row {
+  color: #6b738b;
+  text-align: center;
+}
+
+.url-cell {
+  word-break: break-word;
+}
+
+.field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.field > span {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input[type="file"],
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #cbd3e6;
+  border-radius: 8px;
+  padding: 9px;
+  font: inherit;
+  background: #ffffff;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  border: 1px solid #b7c3df;
+  background: #edf3ff;
+  color: #1c2a43;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #dce8ff;
+}
+
+.status {
+  min-height: 20px;
+  margin: 10px 2px 0;
+  font-size: 14px;
+}
+
+.status.ok {
+  color: #0c6333;
+}
+
+.status.error {
+  color: #9f1f1f;
+}

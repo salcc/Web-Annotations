@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Web Annotations",
+  "description": "Highlight text on webpages and persist annotations per URL.",
+  "version": "1.0.0",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "service_worker": "background.js"
+  },
+  "minimum_chrome_version": "121",
+  "action": {
+    "default_title": "Toggle Annotation Panel"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "MaterialSymbolsOutlined.woff2"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
