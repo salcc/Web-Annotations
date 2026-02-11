@@ -10,12 +10,8 @@
     "<all_urls>"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
     "service_worker": "background.js"
   },
-  "minimum_chrome_version": "121",
   "action": {
     "default_title": "Toggle Annotation Panel"
   },
