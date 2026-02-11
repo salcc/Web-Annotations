@@ -9,6 +9,7 @@ Highlights are tied to each page URL, so they persist across reloads and browser
 - Remove a single highlight with the Erase tool.
 - Remove all highlights on the current page with Erase all.
 - Show/hide the annotation toolbar from the browser action button.
+- Annotation list panel to view highlights on the current page.
 - Export and import annotations from a settings page.
 - URL-keyed storage in `chrome.storage.local` (hash is ignored).
 
@@ -37,7 +38,8 @@ That said, support on those browsers has not been fully validated yet.
 4. Hover the highlight button to pick a color.
 5. Use **Erase** and click an existing highlight to remove it.
 6. Use **Erase all** to clear annotations for the current URL.
-7. Use **Settings** to open export/import tools.
+7. Use **Annotations** to open the in-page annotation list panel.
+8. Use **Settings** to open export/import tools.
 
 Hiding the toolbar does not remove saved highlights.
 

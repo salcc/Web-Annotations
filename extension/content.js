@@ -7,18 +7,23 @@
   const MESSAGE_OPEN_OPTIONS = "WA_OPEN_OPTIONS";
   const MESSAGE_OPEN_REPO = "WA_OPEN_REPO";
   const TOOLBAR_ID = "annotation-toolbar";
+  const ANNOTATION_LIST_PANEL_ID = "annotation-list-panel";
   const FONT_STYLE_ID = "wa-material-icons-font-style";
   const HIGHLIGHT_BUTTON_ID = "highlight-btn";
   const ERASE_BUTTON_ID = "erase-btn";
   const ERASE_ALL_BUTTON_ID = "erase-all-btn";
+  const LIST_BUTTON_ID = "list-btn";
   const SETTINGS_BUTTON_ID = "settings-btn";
   const STAR_BUTTON_ID = "star-btn";
   const HIGHLIGHT_CLASS = "web-highlight";
+  const HIGHLIGHT_FOCUS_CLASS = "web-highlight-focus";
   const URL_CHECK_DELAY_MS = 120;
+  const HIGHLIGHT_FOCUS_MS = 1200;
   const CONTEXT_CHARS = 40;
   const COLORS = ["yellow", "greenyellow", "cyan", "magenta", "red"];
   const EXCLUDED_SELECTOR = [
     `#${TOOLBAR_ID}`,
+    `#${ANNOTATION_LIST_PANEL_ID}`,
     "script",
     "style",
     "noscript",
@@ -40,9 +45,13 @@
   let highlightButton = null;
   let eraseButton = null;
   let eraseAllButton = null;
+  let listButton = null;
   let settingsButton = null;
   let starButton = null;
   let colorPopup = null;
+  let annotationListPanel = null;
+  let annotationListVisible = false;
+  let focusHighlightTimeoutId = null;
 
   initialize().catch((error) => {
     console.error("Web annotations failed to initialize:", error);
@@ -110,6 +119,12 @@
       tooltip: "Erase all"
     });
 
+    listButton = createToolbarButton({
+      id: LIST_BUTTON_ID,
+      icon: "format_list_bulleted",
+      tooltip: "Annotations"
+    });
+
     settingsButton = createToolbarButton({
       id: SETTINGS_BUTTON_ID,
       icon: "settings",
@@ -122,8 +137,28 @@
       tooltip: "Star on GitHub"
     });
 
-    toolbarElement.append(highlightContainer, eraseButton, eraseAllButton, settingsButton, starButton);
+    toolbarElement.append(
+      highlightContainer,
+      eraseButton,
+      eraseAllButton,
+      listButton,
+      settingsButton,
+      starButton
+    );
     document.documentElement.appendChild(toolbarElement);
+
+    annotationListPanel = document.createElement("section");
+    annotationListPanel.id = ANNOTATION_LIST_PANEL_ID;
+    annotationListPanel.style.display = "none";
+    annotationListPanel.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    annotationListPanel.addEventListener("mouseup", (event) => {
+      event.stopPropagation();
+    });
+    document.documentElement.appendChild(annotationListPanel);
+
+    renderAnnotationListPanel();
 
     updateColorState();
   }
@@ -167,9 +202,11 @@
       !highlightButton ||
       !eraseButton ||
       !eraseAllButton ||
+      !listButton ||
       !settingsButton ||
       !starButton ||
-      !colorPopup
+      !colorPopup ||
+      !annotationListPanel
     ) {
       return;
     }
@@ -210,6 +247,12 @@
       clearAllHighlightsFromDom();
       annotations = [];
       await persistAnnotationsForCurrentUrl();
+      renderAnnotationListPanel();
+    });
+
+    listButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setAnnotationListVisibility(!annotationListVisible);
     });
 
     settingsButton.addEventListener("click", (event) => {
@@ -269,9 +312,11 @@
 
     if (toolbarVisible) {
       setMode("highlight");
+      renderAnnotationListPanel();
       return;
     }
 
+    setAnnotationListVisibility(false);
     setMode("idle");
     clearSelection();
   }
@@ -304,6 +349,179 @@
     }
 
     highlightButton.style.textShadow = `0 0 10px ${currentColor}`;
+  }
+
+  function setAnnotationListVisibility(visible) {
+    annotationListVisible = Boolean(visible) && toolbarVisible;
+
+    if (!annotationListPanel || !listButton) {
+      return;
+    }
+
+    listButton.classList.toggle("active", annotationListVisible);
+    annotationListPanel.style.display = annotationListVisible ? "block" : "none";
+
+    if (annotationListVisible) {
+      renderAnnotationListPanel();
+    }
+  }
+
+  function renderAnnotationListPanel() {
+    if (!annotationListPanel) {
+      return;
+    }
+
+    if (!toolbarVisible || !annotationListVisible) {
+      if (listButton) {
+        listButton.classList.remove("active");
+      }
+      annotationListPanel.style.display = "none";
+      return;
+    }
+
+    if (listButton) {
+      listButton.classList.add("active");
+    }
+    annotationListPanel.style.display = "block";
+    annotationListPanel.textContent = "";
+
+    const header = document.createElement("div");
+    header.className = "annotation-list-header";
+
+    const title = document.createElement("h3");
+    title.className = "annotation-list-title";
+    title.textContent = "Annotations";
+
+    const countBadge = document.createElement("span");
+    countBadge.className = "annotation-list-count";
+    countBadge.textContent = String(annotations.length);
+
+    header.append(title, countBadge);
+
+    const body = document.createElement("div");
+    body.className = "annotation-list-body";
+
+    if (annotations.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "annotation-list-empty";
+      empty.textContent = "No annotations on this page yet.";
+      body.appendChild(empty);
+      annotationListPanel.append(header, body);
+      return;
+    }
+
+    const list = document.createElement("ul");
+    list.className = "annotation-list";
+
+    const orderedAnnotations = [...annotations].sort((left, right) => {
+      if (!left.createdAt && !right.createdAt) {
+        return 0;
+      }
+      if (!left.createdAt) {
+        return 1;
+      }
+      if (!right.createdAt) {
+        return -1;
+      }
+      return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+    });
+
+    for (const annotation of orderedAnnotations) {
+      const item = document.createElement("li");
+      item.className = "annotation-list-row";
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "annotation-list-item";
+      button.dataset.annotationId = annotation.id;
+      button.title = "Jump to highlight";
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        focusAnnotationInPage(annotation.id);
+      });
+
+      const swatch = document.createElement("span");
+      swatch.className = "annotation-list-swatch";
+      swatch.style.backgroundColor = annotation.color || COLORS[0];
+
+      const textWrap = document.createElement("span");
+      textWrap.className = "annotation-list-content";
+
+      const text = document.createElement("span");
+      text.className = "annotation-list-text";
+      text.textContent = formatAnnotationPreview(annotation.text);
+
+      const meta = document.createElement("span");
+      meta.className = "annotation-list-meta";
+      meta.textContent = formatAnnotationTimestamp(annotation.createdAt);
+
+      textWrap.append(text, meta);
+      button.append(swatch, textWrap);
+      item.appendChild(button);
+      list.appendChild(item);
+    }
+
+    body.appendChild(list);
+    annotationListPanel.append(header, body);
+  }
+
+  function focusAnnotationInPage(annotationId) {
+    if (!annotationId) {
+      return;
+    }
+
+    const highlights = Array.from(
+      document.querySelectorAll(`.${HIGHLIGHT_CLASS}[data-annotation-id="${annotationId}"]`)
+    );
+    if (highlights.length === 0) {
+      return;
+    }
+
+    const currentlyFocused = Array.from(
+      document.querySelectorAll(`.${HIGHLIGHT_CLASS}.${HIGHLIGHT_FOCUS_CLASS}`)
+    );
+    for (const highlight of currentlyFocused) {
+      highlight.classList.remove(HIGHLIGHT_FOCUS_CLASS);
+    }
+
+    for (const highlight of highlights) {
+      highlight.classList.add(HIGHLIGHT_FOCUS_CLASS);
+    }
+
+    highlights[0].scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest"
+    });
+
+    clearTimeout(focusHighlightTimeoutId);
+    focusHighlightTimeoutId = window.setTimeout(() => {
+      for (const highlight of highlights) {
+        highlight.classList.remove(HIGHLIGHT_FOCUS_CLASS);
+      }
+    }, HIGHLIGHT_FOCUS_MS);
+  }
+
+  function formatAnnotationPreview(value) {
+    const clean = normalizeWhitespace(value);
+    if (clean.length <= 140) {
+      return clean;
+    }
+
+    return `${clean.slice(0, 137)}...`;
+  }
+
+  function formatAnnotationTimestamp(value) {
+    if (!value) {
+      return "Saved annotation";
+    }
+
+    const timestamp = Date.parse(value);
+    if (!Number.isFinite(timestamp)) {
+      return "Saved annotation";
+    }
+
+    return new Date(timestamp).toLocaleString();
   }
 
   async function handleSelectionMouseUp(event) {
@@ -353,6 +571,7 @@
 
     annotations.push(annotation);
     await persistAnnotationsForCurrentUrl();
+    renderAnnotationListPanel();
   }
 
   async function handleEraseClick(event) {
@@ -381,6 +600,7 @@
     removeHighlightById(annotationId);
     annotations = annotations.filter((annotation) => annotation.id !== annotationId);
     await persistAnnotationsForCurrentUrl();
+    renderAnnotationListPanel();
   }
 
   function handleEscapeKey(event) {
@@ -481,6 +701,8 @@
     for (const annotation of sorted) {
       applyAnnotationToDom(annotation);
     }
+
+    renderAnnotationListPanel();
   }
 
   function resolveAnnotationOffsets(annotation, textNodes) {
@@ -760,8 +982,11 @@
       return false;
     }
 
-    const toolbar = document.getElementById(TOOLBAR_ID);
-    if (!toolbar) {
+    const blockedRoots = [
+      document.getElementById(TOOLBAR_ID),
+      document.getElementById(ANNOTATION_LIST_PANEL_ID)
+    ].filter(Boolean);
+    if (blockedRoots.length === 0) {
       return true;
     }
 
@@ -769,16 +994,18 @@
       ? range.commonAncestorContainer.parentElement
       : range.commonAncestorContainer;
 
-    if (ancestor && toolbar.contains(ancestor)) {
-      return false;
-    }
-
-    try {
-      if (range.intersectsNode(toolbar)) {
+    for (const root of blockedRoots) {
+      if (ancestor && root.contains(ancestor)) {
         return false;
       }
-    } catch (_) {
-      return false;
+
+      try {
+        if (range.intersectsNode(root)) {
+          return false;
+        }
+      } catch (_) {
+        return false;
+      }
     }
 
     return true;
@@ -803,6 +1030,7 @@
       annotations = [];
       await loadAnnotationsForCurrentUrl();
       applyStoredAnnotationsToPage();
+      renderAnnotationListPanel();
     }, URL_CHECK_DELAY_MS);
   }
 
