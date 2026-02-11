@@ -23,7 +23,7 @@ That said, support on those browsers has not been fully validated yet.
 
 To install the extension, follow these steps:
 
-1. [Download the latest release](https://github.com/salcc/Web-Annotations/releases/latest) ("Source code" under "Assets").
+1. [Download this repository](https://github.com/salcc/Web-Annotations/archive/refs/heads/main.zip).
 2. Extract the ZIP file to a folder on your computer.
 3. Open the browser's extension management page:
    - Chrome: `chrome://extensions`
