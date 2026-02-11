@@ -1,5 +1,7 @@
 const TOGGLE_PANEL_MESSAGE = "WA_TOGGLE_PANEL";
 const OPEN_OPTIONS_MESSAGE = "WA_OPEN_OPTIONS";
+const OPEN_REPO_MESSAGE = "WA_OPEN_REPO";
+const REPOSITORY_URL = "https://github.com/salcc/Web-Annotations";
 
 chrome.action.onClicked.addListener((tab) => {
   if (!tab.id) {
@@ -13,9 +15,16 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 chrome.runtime.onMessage.addListener((message) => {
-  if (!message || message.type !== OPEN_OPTIONS_MESSAGE) {
+  if (!message) {
     return;
   }
 
-  chrome.runtime.openOptionsPage();
+  if (message.type === OPEN_OPTIONS_MESSAGE) {
+    chrome.runtime.openOptionsPage();
+    return;
+  }
+
+  if (message.type === OPEN_REPO_MESSAGE) {
+    chrome.tabs.create({ url: REPOSITORY_URL });
+  }
 });

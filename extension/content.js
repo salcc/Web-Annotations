@@ -5,12 +5,14 @@
 
   const MESSAGE_TOGGLE_PANEL = "WA_TOGGLE_PANEL";
   const MESSAGE_OPEN_OPTIONS = "WA_OPEN_OPTIONS";
+  const MESSAGE_OPEN_REPO = "WA_OPEN_REPO";
   const TOOLBAR_ID = "annotation-toolbar";
   const FONT_STYLE_ID = "wa-material-icons-font-style";
   const HIGHLIGHT_BUTTON_ID = "highlight-btn";
   const ERASE_BUTTON_ID = "erase-btn";
   const ERASE_ALL_BUTTON_ID = "erase-all-btn";
   const SETTINGS_BUTTON_ID = "settings-btn";
+  const STAR_BUTTON_ID = "star-btn";
   const HIGHLIGHT_CLASS = "web-highlight";
   const URL_CHECK_DELAY_MS = 120;
   const CONTEXT_CHARS = 40;
@@ -39,6 +41,7 @@
   let eraseButton = null;
   let eraseAllButton = null;
   let settingsButton = null;
+  let starButton = null;
   let colorPopup = null;
 
   initialize().catch((error) => {
@@ -113,7 +116,13 @@
       tooltip: "Settings"
     });
 
-    toolbarElement.append(highlightContainer, eraseButton, eraseAllButton, settingsButton);
+    starButton = createToolbarButton({
+      id: STAR_BUTTON_ID,
+      icon: "star",
+      tooltip: "Star on GitHub"
+    });
+
+    toolbarElement.append(highlightContainer, eraseButton, eraseAllButton, settingsButton, starButton);
     document.documentElement.appendChild(toolbarElement);
 
     updateColorState();
@@ -159,6 +168,7 @@
       !eraseButton ||
       !eraseAllButton ||
       !settingsButton ||
+      !starButton ||
       !colorPopup
     ) {
       return;
@@ -205,6 +215,11 @@
     settingsButton.addEventListener("click", (event) => {
       event.stopPropagation();
       chrome.runtime.sendMessage({ type: MESSAGE_OPEN_OPTIONS });
+    });
+
+    starButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      chrome.runtime.sendMessage({ type: MESSAGE_OPEN_REPO });
     });
   }
 
