@@ -16,20 +16,30 @@ Highlights are tied to each page URL, so they persist across reloads and browser
 
 ## Installation
 
-Chrome / Edge / Brave:
 
-1. Open your browser extensions page:
+The extension works with all Chromium-based browsers, including Google Chrome, Microsoft Edge, and Brave.
+This extension is built with standard WebExtension APIs, so it may also work in Firefox and Safari.
+That said, support on those browsers has not been fully validated yet.
+
+To install the extension, follow these steps:
+
+1. [Download the latest release](https://github.com/salcc/Web-Annotations/releases/latest) ("Source code" under "Assets").
+2. Extract the ZIP file to a folder on your computer.
+3. Open the browser's extension management page:
    - Chrome: `chrome://extensions`
    - Edge: `edge://extensions`
    - Brave: `brave://extensions`
-2. Enable **Developer mode**.
-3. Click **Load unpacked**.
-4. Select: `/Users/salcc/Desktop/Web-Annotations/extension`
+   - Other: check the browser's documentation for the extension management page.
+4. Enable developer mode if it is not already enabled (usually a toggle switch in the top right corner).
+5. Click "Load unpacked" and select the "extension" folder inside the extracted ZIP file.
 
-Firefox and Safari:
+The extension should now be installed and ready to use!
 
-This extension is built with standard WebExtension APIs, so it may also work in Firefox and Safari.
-That said, support on those browsers has not been fully validated yet.
+Note that the extension will not automatically update when new versions are released. To update the extension, download the latest release and repeat the installation steps. You can watch the GitHub repository to receive notifications of new releases.
+
+> [!CAUTION]
+> Annotations may be lost when updating or reloading the extension. Export them in settings beforehand, then import them afterward to prevent data loss.
+
 
 ## Usage
 
@@ -55,19 +65,6 @@ Open **Settings** from the annotation toolbar.
   - Merge mode adds/replaces matching annotations while keeping existing unrelated data.
   - Replace mode clears current annotation data first, then imports the provided file.
 
-## Data Format
+## Support & Contributions
 
-Storage key:
-- Cleaned page URL (fragment/hash removed), for example `https://example.com/article?id=1`
-
-Storage value:
-- Array of annotation objects containing:
-  - `id`
-  - `color`
-  - `text`
-  - `comment`
-  - `position.start`
-  - `position.end`
-  - `quote.prefix`
-  - `quote.suffix`
-  - `createdAt`
+For bug reports and feature suggestions, please open an issue on GitHub. Feel free to also submit pull requests that enhance the extension.

@@ -24,6 +24,23 @@
   const CONTEXT_CHARS = 40;
   const COLORS = ["yellow", "greenyellow", "cyan", "magenta", "red"];
   const COLOR_PARSE_CONTEXT = document.createElement("canvas").getContext("2d");
+
+  /**
+   * Annotation storage schema (stored in chrome.storage.local):
+   * Key: cleaned page URL without hash fragment.
+   * Value: Annotation[]
+   *
+   * Annotation:
+   * {
+   *   id: string,
+   *   color: string,
+   *   text: string,
+   *   comment: string,
+   *   position: { start: number, end: number } | null,
+   *   quote: { prefix: string, suffix: string },
+   *   createdAt: string | null
+   * }
+   */
   const EXCLUDED_SELECTOR = [
     `#${TOOLBAR_ID}`,
     `#${ANNOTATION_LIST_PANEL_ID}`,

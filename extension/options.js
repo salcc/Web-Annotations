@@ -3,6 +3,20 @@
   const DEFAULT_COLOR = "yellow";
   const BLOCKED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
+  /**
+   * Import/export payload schema:
+   * {
+   *   format: "web-annotations-export",
+   *   version: number,
+   *   exportedAt: string,
+   *   annotationsByUrl: {
+   *     [cleanUrlWithoutHash]: Annotation[]
+   *   }
+   * }
+   *
+   * Annotation shape is normalized by sanitizeAnnotation().
+   */
+
   const statUrls = document.getElementById("stat-urls");
   const statAnnotations = document.getElementById("stat-annotations");
   const urlRows = document.getElementById("url-rows");
