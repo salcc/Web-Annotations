@@ -574,7 +574,18 @@
         startCommentEdit(annotation.id);
       });
 
-      actions.appendChild(commentButton);
+      const eraseButton = document.createElement("button");
+      eraseButton.type = "button";
+      eraseButton.className = "annotation-list-erase-btn";
+      eraseButton.textContent = "Erase";
+      eraseButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        eraseAnnotationById(annotation.id).catch((error) => {
+          console.error("Failed to erase annotation:", error);
+        });
+      });
+
+      actions.append(commentButton, eraseButton);
       item.appendChild(actions);
 
       const comment = getAnnotationComment(annotation).trim();
@@ -752,6 +763,21 @@
     renderAnnotationListPanel();
   }
 
+  async function eraseAnnotationById(annotationId) {
+    if (!annotationId) {
+      return;
+    }
+
+    removeHighlightById(annotationId);
+    annotations = annotations.filter((annotation) => annotation.id !== annotationId);
+    if (activeCommentEditorId === annotationId) {
+      activeCommentEditorId = null;
+    }
+    commentDraftsById.delete(annotationId);
+    await persistAnnotationsForCurrentUrl();
+    renderAnnotationListPanel();
+  }
+
   async function handleSelectionMouseUp(event) {
     if (!toolbarVisible || mode !== "highlight") {
       return;
@@ -824,15 +850,7 @@
 
     event.preventDefault();
     event.stopPropagation();
-
-    removeHighlightById(annotationId);
-    annotations = annotations.filter((annotation) => annotation.id !== annotationId);
-    if (activeCommentEditorId === annotationId) {
-      activeCommentEditorId = null;
-    }
-    commentDraftsById.delete(annotationId);
-    await persistAnnotationsForCurrentUrl();
-    renderAnnotationListPanel();
+    await eraseAnnotationById(annotationId);
   }
 
   function handleEscapeKey(event) {
