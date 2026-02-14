@@ -78,7 +78,7 @@
     if (entries.length === 0) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 2;
+      cell.colSpan = 3;
       cell.className = "empty-row";
       cell.textContent = "No annotation data yet.";
       row.appendChild(cell);
@@ -91,14 +91,49 @@
 
       const urlCell = document.createElement("td");
       urlCell.className = "url-cell";
-      urlCell.textContent = url;
+      const link = document.createElement("a");
+      link.className = "url-link";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = url;
+      urlCell.appendChild(link);
 
       const countCell = document.createElement("td");
       countCell.textContent = String(annotations.length);
 
-      row.append(urlCell, countCell);
+      const actionsCell = document.createElement("td");
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "table-icon-btn";
+      removeButton.title = "Erase all annotations for this URL";
+      removeButton.setAttribute("aria-label", "Erase all annotations for this URL");
+      const removeIcon = document.createElement("span");
+      removeIcon.className = "icon";
+      removeIcon.textContent = "delete_sweep";
+      removeButton.appendChild(removeIcon);
+      removeButton.addEventListener("click", () => {
+        const confirmed = confirm("Erase all annotations for this URL?");
+        if (!confirmed) {
+          return;
+        }
+
+        removeUrlEntry(url).catch((error) => {
+          console.error("Failed to remove URL entry:", error);
+          setStatus("Could not remove the entry.", "error");
+        });
+      });
+      actionsCell.appendChild(removeButton);
+
+      row.append(urlCell, countCell, actionsCell);
       urlRows.appendChild(row);
     }
+  }
+
+  async function removeUrlEntry(urlKey) {
+    await storageRemove([urlKey]);
+    await refreshSummary();
+    setStatus("Entry removed.", "ok");
   }
 
   async function runExport() {
