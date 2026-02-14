@@ -568,21 +568,31 @@
       text.className = "annotation-list-text";
       text.textContent = formatAnnotationPreview(annotation.text);
 
+      textWrap.appendChild(text);
+      button.append(swatch, textWrap);
+      item.appendChild(button);
+
+      const metaRow = document.createElement("div");
+      metaRow.className = "annotation-list-meta-row";
+
       const meta = document.createElement("span");
       meta.className = "annotation-list-meta";
       meta.textContent = formatAnnotationTimestamp(annotation.createdAt);
 
-      textWrap.append(text, meta);
-      button.append(swatch, textWrap);
-      item.appendChild(button);
-
       const actions = document.createElement("div");
       actions.className = "annotation-list-actions";
+
+      const hasComment = getAnnotationComment(annotation).trim().length > 0;
 
       const commentButton = document.createElement("button");
       commentButton.type = "button";
       commentButton.className = "annotation-list-comment-btn";
-      commentButton.textContent = getAnnotationComment(annotation).trim() ? "Edit comment" : "Add comment";
+      commentButton.setAttribute("aria-label", hasComment ? "Edit comment" : "Add comment");
+      commentButton.title = hasComment ? "Edit comment" : "Add comment";
+      const commentIcon = document.createElement("span");
+      commentIcon.className = "material-symbols-outlined";
+      commentIcon.textContent = hasComment ? "edit_note" : "add_comment";
+      commentButton.appendChild(commentIcon);
       commentButton.addEventListener("click", (event) => {
         event.stopPropagation();
         startCommentEdit(annotation.id);
@@ -591,7 +601,12 @@
       const eraseButton = document.createElement("button");
       eraseButton.type = "button";
       eraseButton.className = "annotation-list-erase-btn";
-      eraseButton.textContent = "Erase";
+      eraseButton.setAttribute("aria-label", "Erase annotation");
+      eraseButton.title = "Erase annotation";
+      const eraseIcon = document.createElement("span");
+      eraseIcon.className = "material-symbols-outlined";
+      eraseIcon.textContent = "delete";
+      eraseButton.appendChild(eraseIcon);
       eraseButton.addEventListener("click", (event) => {
         event.stopPropagation();
         eraseAnnotationById(annotation.id).catch((error) => {
@@ -600,7 +615,8 @@
       });
 
       actions.append(commentButton, eraseButton);
-      item.appendChild(actions);
+      metaRow.append(meta, actions);
+      item.appendChild(metaRow);
 
       const comment = getAnnotationComment(annotation).trim();
       if (comment && activeCommentEditorId !== annotation.id) {
