@@ -172,6 +172,28 @@
   color: #f7f9ff !important;
 }
 
+.annotation-list-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.annotation-list-sort {
+  height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5ff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.annotation-list-sort:focus {
+  outline: 1px solid rgba(93, 162, 255, 0.9);
+  outline-offset: 0;
+}
+
 .annotation-list-count {
   min-width: 28px;
   text-align: center;
@@ -183,7 +205,7 @@
 }
 
 .annotation-list-body {
-  max-height: calc(min(56vh, 460px) - 46px);
+  max-height: calc(min(56vh, 460px) - 50px);
   overflow: auto;
 }
 

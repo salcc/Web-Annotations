@@ -75,6 +75,7 @@
   let annotationListVisible = false;
   let focusHighlightTimeoutId = null;
   let activeCommentEditorId = null;
+  let annotationSortMode = "position";
   const commentDraftsById = new Map();
 
   initialize().catch((error) => {
@@ -500,7 +501,31 @@
     countBadge.className = "annotation-list-count";
     countBadge.textContent = String(annotations.length);
 
-    header.append(title, countBadge);
+    const controls = document.createElement("div");
+    controls.className = "annotation-list-controls";
+
+    const sortSelect = document.createElement("select");
+    sortSelect.className = "annotation-list-sort";
+    sortSelect.setAttribute("aria-label", "Sort annotations");
+
+    const dateOption = document.createElement("option");
+    dateOption.value = "date";
+    dateOption.textContent = "Date";
+
+    const positionOption = document.createElement("option");
+    positionOption.value = "position";
+    positionOption.textContent = "Page order";
+
+    sortSelect.append(dateOption, positionOption);
+    sortSelect.value = annotationSortMode;
+    sortSelect.addEventListener("change", (event) => {
+      const nextMode = event.target instanceof HTMLSelectElement ? event.target.value : "date";
+      annotationSortMode = nextMode === "position" ? "position" : "date";
+      renderAnnotationListPanel();
+    });
+
+    controls.append(sortSelect, countBadge);
+    header.append(title, controls);
 
     const body = document.createElement("div");
     body.className = "annotation-list-body";
@@ -517,18 +542,7 @@
     const list = document.createElement("ul");
     list.className = "annotation-list";
 
-    const orderedAnnotations = [...annotations].sort((left, right) => {
-      if (!left.createdAt && !right.createdAt) {
-        return 0;
-      }
-      if (!left.createdAt) {
-        return 1;
-      }
-      if (!right.createdAt) {
-        return -1;
-      }
-      return Date.parse(right.createdAt) - Date.parse(left.createdAt);
-    });
+    const orderedAnnotations = getOrderedAnnotations();
 
     for (const annotation of orderedAnnotations) {
       const item = document.createElement("li");
@@ -709,6 +723,115 @@
     }
 
     return new Date(timestamp).toLocaleString();
+  }
+
+  function getOrderedAnnotations() {
+    const orderedAnnotations = [...annotations];
+    const highlightTopById = getHighlightTopByAnnotationId();
+
+    if (annotationSortMode === "position") {
+      orderedAnnotations.sort((left, right) => {
+        const leftPosition = getAnnotationPositionOrder(left, highlightTopById);
+        const rightPosition = getAnnotationPositionOrder(right, highlightTopById);
+        if (leftPosition.sourceRank !== rightPosition.sourceRank) {
+          return leftPosition.sourceRank - rightPosition.sourceRank;
+        }
+        if (leftPosition.value !== rightPosition.value) {
+          return leftPosition.value - rightPosition.value;
+        }
+
+        const leftTimestamp = getAnnotationTimestamp(left);
+        const rightTimestamp = getAnnotationTimestamp(right);
+        if (leftTimestamp !== rightTimestamp) {
+          return rightTimestamp - leftTimestamp;
+        }
+
+        return left.id.localeCompare(right.id);
+      });
+      return orderedAnnotations;
+    }
+
+    orderedAnnotations.sort((left, right) => {
+      const leftTimestamp = getAnnotationTimestamp(left);
+      const rightTimestamp = getAnnotationTimestamp(right);
+      if (leftTimestamp !== rightTimestamp) {
+        return rightTimestamp - leftTimestamp;
+      }
+
+      const leftPosition = getAnnotationPositionOrder(left, highlightTopById);
+      const rightPosition = getAnnotationPositionOrder(right, highlightTopById);
+      if (leftPosition.sourceRank !== rightPosition.sourceRank) {
+        return leftPosition.sourceRank - rightPosition.sourceRank;
+      }
+      if (leftPosition.value !== rightPosition.value) {
+        return leftPosition.value - rightPosition.value;
+      }
+
+      return left.id.localeCompare(right.id);
+    });
+
+    return orderedAnnotations;
+  }
+
+  function getHighlightTopByAnnotationId() {
+    const topById = new Map();
+    const highlights = Array.from(document.querySelectorAll(`.${HIGHLIGHT_CLASS}[data-annotation-id]`));
+
+    for (const highlight of highlights) {
+      const annotationId = highlight.dataset.annotationId;
+      if (!annotationId) {
+        continue;
+      }
+
+      const rect = highlight.getBoundingClientRect();
+      const top = rect.top + window.scrollY;
+      if (!Number.isFinite(top)) {
+        continue;
+      }
+
+      if (!topById.has(annotationId) || top < topById.get(annotationId)) {
+        topById.set(annotationId, top);
+      }
+    }
+
+    return topById;
+  }
+
+  function getAnnotationPositionOrder(annotation, highlightTopById) {
+    if (!annotation) {
+      return {
+        sourceRank: 2,
+        value: Number.POSITIVE_INFINITY
+      };
+    }
+
+    if (highlightTopById && highlightTopById.has(annotation.id)) {
+      return {
+        sourceRank: 0,
+        value: highlightTopById.get(annotation.id)
+      };
+    }
+
+    if (annotation.position && Number.isFinite(annotation.position.start)) {
+      return {
+        sourceRank: 1,
+        value: annotation.position.start
+      };
+    }
+
+    return {
+      sourceRank: 2,
+      value: Number.POSITIVE_INFINITY
+    };
+  }
+
+  function getAnnotationTimestamp(annotation) {
+    if (!annotation || !annotation.createdAt) {
+      return Number.NEGATIVE_INFINITY;
+    }
+
+    const parsed = Date.parse(annotation.createdAt);
+    return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
   }
 
   function getAnnotationComment(annotation) {
