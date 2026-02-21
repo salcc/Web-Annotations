@@ -4,7 +4,7 @@ A lightweight browser extension to highlight text on regular webpages and keep a
 
 <details>
 <summary>Screenshot</summary>
-<img src="https://github.com/user-attachments/assets/4c267bf0-99e8-4be1-a885-ba72fa373477" />
+<img src="https://github.com/user-attachments/assets/f450d8ad-439c-4a94-af53-1df695ee4d00" />
 </details>
 
 Highlights are tied to each page URL, so they persist across reloads and browser restarts.
