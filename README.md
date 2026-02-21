@@ -2,8 +2,10 @@
 
 A lightweight browser extension to highlight text on regular webpages and keep annotations in browser local storage.
 
-<img width="1252" height="899" alt="image" src="https://github.com/user-attachments/assets/4c267bf0-99e8-4be1-a885-ba72fa373477" />
-
+<details>
+<summary>Screenshot</summary>
+<img src="https://github.com/user-attachments/assets/4c267bf0-99e8-4be1-a885-ba72fa373477" />
+</details>
 
 Highlights are tied to each page URL, so they persist across reloads and browser restarts.
 
